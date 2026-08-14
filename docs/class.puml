@@ -1,0 +1,102 @@
+@startuml ClassDiagram
+
+
+class Client {
+- id : int
+- nom : string
+- telephone : string
+- adresse : string
+- limiteCredit : float
+
+}
+
+class Produit {
+- id : int
+- nom : string
+- prixVente : float
+- prixAchat : float
+- quantiteStock : int
+- seuilAlerte : int
+
+}
+
+class Fournisseur {
+- id : int
+- nom : string
+- telephone : string
+- adresse : string
+}
+
+class Commande {
+- id : int
+- dateCommande : DateTime
+- statut : string
+- montantTotal : float
+
+
+}
+
+class LigneCommande {
+- id : int
+- quantite : int
+- prixUnitaire : float
+
+}
+
+class Paiement {
+- id : int
+- montant : float
+- datePaiement : DateTime
+- modePaiement : string
+}
+
+class Dette {
+- id : int
+- montantInitial : float
+- montantRestant : float
+- statut : string
+
+
+}
+
+class Approvisionnement {
+- id : int
+- dateReception : DateTime
+- numeroBL : string
+
+
+}
+
+class LigneApprovisionnement {
+- id : int
+- quantiteRecue : int
+- prixAchatUnitaire : float
+}
+
+class Utilisateur {
+- id : int
+- nom : string
+- email : string
+- motDePasse : string
+- role : string
+
+
+}
+
+Client "1" -- "0..*" Commande 
+Client "1" -- "0..*" Dette 
+Commande "1" *-- "1..*" LigneCommande 
+Produit "1" -- "0..*" LigneCommande 
+Commande "1" -- "0..*" Paiement 
+Dette "1" -- "0..*" Paiement 
+Commande "1" -- "0..1" Dette 
+
+Fournisseur "1" -- "0..*" Approvisionnement
+Approvisionnement "1" *-- "1..*" LigneApprovisionnement 
+Produit "1" -- "0..*" LigneApprovisionnement 
+
+Utilisateur "1" -- "0..*" Commande 
+Utilisateur "1" -- "0..*" Approvisionnement 
+Utilisateur "1" -- "0..*" Paiement 
+
+@enduml

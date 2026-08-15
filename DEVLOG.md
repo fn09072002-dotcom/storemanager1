@@ -22,3 +22,26 @@
     le paiement règle directement une commande sans dette)
 
 
+###  [ Phase 2] : POO, Repositories & Ventes POS
+
+#### Première étape : les entités
+
+- **Heure de réalisation** :
+- **Ce qui a été fait** :
+  - Ajout de l'attribut email au Client (diagramme, schéma SQL, entité) — repéré
+    en confrontant l'interface (maquette HTML) au modèle existant
+  - 8 entités POO créées dans src/Model/Entity/ : Produit, Client, Dette,
+    Fournisseur, Utilisateur, Commande, Paiement, Approvisionnement
+  - Méthodes métier encapsulées dans les entités : estEnRupture() (Produit),
+    peutAcheterACredit() (Client), enregistrerRemboursement()/estSoldee() (Dette),
+    aLeRole() (Utilisateur), estValidee() (Commande)
+- **Difficultés / Obstacles** :
+  - Confusion récurrente entre = (affectation) et ===/== (comparaison) dans
+    les conditions if — corrigé sur Dette::enregistrerRemboursement() et
+    Dette::estSoldee()
+  - Pour estSoldee(), j'ai d'abord comparé montantRestant === 0 au lieu de
+    statut === 'SOLDEE' — risque d'imprécision avec les nombres flottants (float),
+    le statut texte est plus fiable
+  - Confusion sur le type des clés étrangères : mettre le type de la classe
+    référencée (ex: Commande $commande) ou juste un int (commandeId) — j'ai
+    choisi int, plus simple à gérer pour moi

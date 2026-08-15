@@ -67,4 +67,17 @@
   - Erreur au premier essai de ClientRepository::getAll() : j'avais repris
     le contenu du constructeur (les $this->x = x) à l'intérieur de l'appel
     new Client(...), au lieu de passer juste les valeurs de $row
+
+
+
+    #### Troisième étape : VenteService
+
+- **Ce qui a été fait** :
+  - VenteService::validerVente() avec transaction SQL (beginTransaction/commit/rollBack)
+  - Vérification du stock, calcul du montant total, création de la Commande,
+    décrémentation du stock, création d'une Dette si paiement partiel
+- **Difficultés / Obstacles** :
+  - Plusieurs erreurs de logique (+ au lieu de -, accolade mal fermée)
+  - Compréhension du rollBack() : si une étape échoue après qu'une autre a
+    déjà été enregistrée, tout est annulé, même ce qui semblait déjà réussi
   

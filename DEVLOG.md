@@ -81,3 +81,20 @@
   - Compréhension du rollBack() : si une étape échoue après qu'une autre a
     déjà été enregistrée, tout est annulé, même ce qui semblait déjà réussi
   
+
+  #### Quatrième étape : POSController et vue caisse
+
+- **Ce qui a été fait** :
+  - POSController::afficherCaisse() (GET) et encaisser() (POST), routes /pos et
+    /pos/encaisser ajoutées dans Router.php
+  - Reconstruction du panier à partir de product_ids[]/product_qtys[] envoyés
+    par le formulaire (deux tableaux parallèles, recombinés par index)
+  - Vue caisse (views/pos/index.php) : formulaire client + sélection produits
+  - SessionManager créé 
+- **Difficultés / Obstacles** :
+  - Bug le plus long à trouver : les menus déroulants restaient vides alors
+    que les données existaient bien en base (confirmé via VS Code). Diagnostic
+    par var_dump direct de Database::getInstance() : PHP était connecté à
+    storemanager1 comme prévu, mais voyait 0 lignes alors que VS Code en
+    voyait 7 sur "la même" base - problème de connexion différente
+    

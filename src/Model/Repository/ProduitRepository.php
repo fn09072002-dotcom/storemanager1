@@ -56,4 +56,10 @@ class ProduitRepository {
             ':seuil_alerte' => $produit->getSeuilAlerte()
         ]);
     }
+
+    public function updateStock(int $produitId, int $nouvelleQuantite): void {
+    $sql = "UPDATE produits SET quantite_stock = :quantite WHERE id = :id";
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute([':quantite' => $nouvelleQuantite, ':id' => $produitId]);
+}
 }

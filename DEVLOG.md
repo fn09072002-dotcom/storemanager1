@@ -45,3 +45,26 @@
   - Confusion sur le type des clés étrangères : mettre le type de la classe
     référencée (ex: Commande $commande) ou juste un int (commandeId) — j'ai
     choisi int, plus simple à gérer pour moi
+
+
+
+
+    #### Deuxième étape : les Repositories
+
+
+- **Ce qui a été fait** :
+  - 8 Repositories créés dans src/Model/Repository/ : ClientRepository,
+    ProduitRepository, FournisseurRepository, UtilisateurRepository,
+    CommandeRepository, DetteRepository, PaiementRepository,
+    ApprovisionnementRepository
+  - CommandeRepository et ApprovisionnementRepository::save() retournent
+    l'ID généré (lastInsertId()), contrairement aux autres save() qui sont void
+  - DetteRepository a une méthode update() en plus des 3 autres (findById,
+    getAll, save), car c'est la seule entité dont l'état change après sa
+    création (remboursements successifs)
+  
+- **Difficultés / Obstacles** :
+  - Erreur au premier essai de ClientRepository::getAll() : j'avais repris
+    le contenu du constructeur (les $this->x = x) à l'intérieur de l'appel
+    new Client(...), au lieu de passer juste les valeurs de $row
+  

@@ -6,6 +6,7 @@ class Client {
 - nom : string
 - telephone : string
 - adresse : string
+-email :string
 - limiteCredit : float
 
 }

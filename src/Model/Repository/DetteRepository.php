@@ -41,7 +41,6 @@ class DetteRepository {
         ]);
     }
 
-    // Spécifique aux dettes : après enregistrerRemboursement() côté objet, on répercute en base
     public function update(Dette $dette): void {
         $sql = "UPDATE dettes SET montant_restant = :montant_restant, statut = :statut WHERE id = :id";
         $stmt = $this->pdo->prepare($sql);

@@ -127,3 +127,21 @@ mauvais require fichier qui plante
   - Fichier LigneApprovisionement.php créé avec une faute d'orthographe (un seul
     "n") alors que le require_once demandait LigneApprovisionnement.php (deux
     "n") 
+
+
+
+    #### Étape : AuthManager & Contrôle des Rôles
+
+- **Ce qui a été fait** :
+  - AuthController (login/logout) 
+  - AuthManager : classe statique avec permissions par rôle (admin, vente,
+    stock, inventaire), calquées sur rolePermissions du mockup JS original
+  - Router modifié pour vérifier le rôle après l'authentification
+    
+- **Difficultés / Obstacles** :
+  
+  - UtilisateurRepository.php écrasé par erreur
+    - le fichier existait et se chargeait sans erreur, mais définissait la
+      mauvaise classe, donc "Class UtilisateurRepository not found" malgré
+      un require_once syntaxiquement correct
+  

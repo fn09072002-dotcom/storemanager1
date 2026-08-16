@@ -16,33 +16,7 @@ class UtilisateurRepository {
         if (!$row) return null;
 
         return new Utilisateur($row['id'], $row['nom'], $row['email'], $row['mot_de_passe'], $row['role']);
-    }<?php
-require_once dirname(__DIR__) . '/Entity/Client.php';
-require_once dirname(__DIR__, 2) . '/Core/Database.php';
-
-class ClientRepository {
-    private PDO $pdo;
-
-    public function __construct() {
-        $this->pdo = Database::getInstance();
     }
-
-    public function findById(int $id): ?Client {
-        $stmt = $this->pdo->prepare("SELECT * FROM clients WHERE id = :id");
-        $stmt->execute([':id' => $id]);
-        $row = $stmt->fetch();
-        if (!$row) return null;
-
-        return new Client(
-            $row['id'],
-            $row['nom'],
-            $row['telephone'],
-            $row['email'],
-            $row['adresse'],
-            $row['limite_credit']
-        );
-    }
-}
 
     public function findByEmail(string $email): ?Utilisateur {
         $stmt = $this->pdo->prepare("SELECT * FROM utilisateurs WHERE email = :email");

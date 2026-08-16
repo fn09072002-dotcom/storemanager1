@@ -37,7 +37,7 @@ class POSController {
 
     public function encaisser(): void {
         $clientId = (int) $_POST['client_id'];
-        $utilisateurId = $this->session->get('utilisateur')['id'] ?? 1;  
+        $utilisateurId = $this->session->get('utilisateur')['id'] ;
         $montantPaye = (float) $_POST['montant_verse'];
 
         $panier = [];

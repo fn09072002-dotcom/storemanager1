@@ -110,3 +110,20 @@
 bug rencontrer a cause d'une casse minuscule a la place de majuscule 
 
 mauvais require fichier qui plante
+
+
+#### Étape : Approvisionnements & Réception BL
+
+- **Ce qui a été fait** :
+  - Approvisionnement redesigné avec un vrai statut (COMMANDE -> RECEPTIONNE) et
+    date_reception nullable tant que non réceptionné - plus fidèle au métier
+    réel qu'un simple champ date toujours rempli
+  - Entités/Repository LigneApprovisionnement, SupplyService avec transaction
+    SQL (création BL, réception avec incrémentation du stock produit par produit)
+  - SupplyController (4 actions : liste, création BL, formulaire réception,
+    traitement réception) et vue views/supplies/
+- **Difficultés / Obstacles** :
+  -
+  - Fichier LigneApprovisionement.php créé avec une faute d'orthographe (un seul
+    "n") alors que le require_once demandait LigneApprovisionnement.php (deux
+    "n") 

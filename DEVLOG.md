@@ -98,3 +98,15 @@
     storemanager1 comme prévu, mais voyait 0 lignes alors que VS Code en
     voyait 7 sur "la même" base - problème de connexion différente
     
+
+    ###  [ Phase 3] : Dettes, Approvisionnements & Rôles
+- **Heure de réalisation** : 09h00 - 11h30
+- **Ce qui a été fait** :
+  DetteRepository.php (requêtes préparées PDO), DetteService.php avec
+  logique de remboursement partiel et mise à jour automatique du statut
+  (EN_COURS -> SOLDEE quand montant_restant atteint 0), vue
+  views/dettes/index.php affichant le registre des dettes.
+- **Difficultés / Obstacles** :
+bug rencontrer a cause d'une casse minuscule a la place de majuscule 
+
+mauvais require fichier qui plante

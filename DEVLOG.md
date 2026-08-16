@@ -144,4 +144,51 @@ mauvais require fichier qui plante
     - le fichier existait et se chargeait sans erreur, mais définissait la
       mauvaise classe, donc "Class UtilisateurRepository not found" malgré
       un require_once syntaxiquement correct
+
+
+
+
+
+
+
+
+
+      ## 2. Autopsie de 3 Méthodes Clés 
+
+### Méthode 1 : `Database::getInstance()`
+- **Fichier** : `src/Core/Database.php`
+- **Rôle** : Fournit une connexion PDO unique à toute l'application (pattern singleton), avec bascule automatique vers SQLite si PostgreSQL est injoignable.
+- **Explication ligne par ligne** :
+  - `private static ?PDO $instance = null;` — attribut static (partagé par toute la classe, pas par objet), nullable tant qu'aucune connexion n'a été créée.
+  - `private function __construct() {}` — constructeur privé : empêche `new Database()` depuis l'extérieur, force à passer par `getInstance()`.
+  - `if (self::$instance === null)` — vérifie si c'est le premier appel ; si une connexion existe déjà, on saute directement au `return` final (une seule tentative de connexion pour toute l'application).
+  - `try { self::$instance = new PDO("pgsql:...") }` — tente une connexion PostgreSQL.
+  - `catch (PDOException $e) { self::$instance = new PDO("sqlite:...") }` — si la connexion PostgreSQL échoue (serveur éteint, mauvais identifiants), bascule sur un fichier SQLite local, sans jamais faire planter l'application.
+  - `exec("PRAGMA foreign_keys = ON;")` — SQLite désactive les clés étrangères par défaut ; cette ligne les réactive pour garder la même intégrité référentielle qu'en PostgreSQL.
+  - `return self::$instance;` — retourne toujours la même connexion, peu importe combien de fois la méthode est appelée depuis n'importe quel Repository.
+
+### Méthode 2 : `VenteService::validerVente()`
+- **Fichier** : `src/Service/VenteService.php`
+- **Rôle** : Traite une vente complète (POS) de façon atomique : vérifie le stock, calcule le total, crée la commande, décrémente le stock, trace les lignes vendues, et crée une dette si le paiement est partiel — le tout dans une seule transaction SQL.
+- **Explication ligne par ligne** :
+  - `$this->pdo->beginTransaction();` — ouvre une transaction : toutes les écritures qui suivent restent provisoires tant que `commit()` n'est pas atteint.
+  - Boucle 1 (vérification + calcul) : pour chaque ligne du panier, va chercher le `Produit` via `ProduitRepository::findById()`, vérifie que le stock est suffisant (`throw new Exception` sinon), et cumule `$montantTotal`.
+  - `new Commande(0, ...)` puis `$this->commandeRepository->save($commande)` — crée l'objet Commande avec un `id` factice (0, PostgreSQL générera le vrai via `SERIAL`), le Repository retourne le véritable `$commandeId` généré.
+  - Boucle 2 (décrémentation + traçabilité) : pour chaque produit du panier, `updateStock()` diminue le stock, et une `LigneCommande` est créée et sauvegardée pour garder une trace exacte de ce qui a été vendu, à quel prix, ce jour-là.
+  - `if ($montantPaye < $montantTotal)` — si le client n'a pas tout payé, calcule le reste dû et crée une `Dette` liée à cette commande (relation `0..1`, une commande génère au plus une dette).
+  - `$this->pdo->commit();` — valide définitivement toutes les écritures d'un coup.
+  - `catch (Exception $e) { $this->pdo->rollBack(); throw $e; }` — si une étape échoue à n'importe quel moment, annule **toute** la transaction (y compris ce qui semblait déjà réussi), pour ne jamais laisser la base dans un état incohérent (ex: commande enregistrée sans mouvement de stock associé).
+
+### Méthode 3 : `DetteService::enregistrerPaiement()`
+- **Fichier** : `src/Service/DetteService.php`
+- **Rôle** : Enregistre un remboursement partiel ou total sur une dette existante, met à jour son état, et trace ce paiement précis dans l'historique.
+- **Explication ligne par ligne** :
+  - `$this->pdo->beginTransaction();` — même logique que `validerVente()` : deux tables vont être modifiées (`dettes`, `paiements`), il faut que les deux réussissent ensemble ou aucune.
+  - `$dette = $this->detteRepository->findById($detteId);` — récupère l'objet `Dette` existant depuis la base (pas un `new`, l'objet a été créé bien avant par `VenteService`).
+  - `if ($dette === null) throw new Exception(...)` — garde-fou si l'ID fourni ne correspond à rien.
+  - `$dette->enregistrerRemboursement($montant);` — appelle la méthode métier de l'entité : diminue `montantRestant` en mémoire, passe `statut` à `SOLDEE` si ça atteint 0. Aucune écriture SQL à ce stade, juste l'objet PHP qui change.
+  - `$this->detteRepository->update($dette);` — persiste ce nouvel état en base (`UPDATE dettes SET montant_restant = ..., statut = ...`).
+  - `new Paiement(0, null, $detteId, ...)` — crée une ligne de paiement : `commandeId` à `null` (ce paiement rembourse une dette, pas directement une commande), `detteId` renseigné.
+  - `$this->paiementRepository->save($paiement);` — insère cette nouvelle ligne dans `paiements`, qui garde une trace historique indépendante de l'état courant de la dette (utile même après plusieurs remboursements successifs).
+  - `commit()` / `catch` + `rollBack()` — même garantie que pour `VenteService` : si `save()` du paiement échoue après que `update()` de la dette a réussi, tout est annulé, pour ne jamais avoir un `montantRestant` diminué sans preuve traçable du paiement correspondant.
   

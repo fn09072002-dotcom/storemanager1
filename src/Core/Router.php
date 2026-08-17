@@ -15,29 +15,24 @@ class Router {
         ['/supplies/receptionner/valider','SupplyController.php', 'SupplyController', 'receptionner'],
     ];
 
-    private array $routesPubliques = ['/login']; 
-    private SessionManager $session;
-
-    public function __construct(SessionManager $session) {
-        $this->session = $session;
-    }
+    private array $routesPubliques = ['/login'];
 
     public function dispatch(): void {
         $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
-           if (!in_array($uri, $this->routesPubliques, true) && $this->session->get('utilisateur') === null) {
-        header('Location: /login');
-        exit;
-    }
-
-    $utilisateur = $this->session->get('utilisateur');
-    if ($utilisateur !== null && !in_array($uri, $this->routesPubliques, true)) {
-        if (!AuthManager::peutAcceder($utilisateur['role'], $uri)) {
-            http_response_code(403);
-            echo "<h1>403 - Accès refusé pour votre profil</h1>";
+        if (!in_array($uri, $this->routesPubliques, true) && SessionManager::get('utilisateur') === null) {
+            header('Location: /login');
             exit;
         }
-    }
+
+        $utilisateur = SessionManager::get('utilisateur');
+        if ($utilisateur !== null && !in_array($uri, $this->routesPubliques, true)) {
+            if (!AuthManager::peutAcceder($utilisateur['role'], $uri)) {
+                http_response_code(403);
+                echo "<h1>403 - Accès refusé pour votre profil</h1>";
+                exit;
+            }
+        }
 
         $routeFound = false;
 
@@ -51,7 +46,7 @@ class Router {
                     require_once $controllerFile;
 
                     if (method_exists($classe, $methode)) {
-                        $controller = new $classe($this->session);
+                        $controller = new $classe();
                         $controller->$methode();
                         $routeFound = true;
                         break;

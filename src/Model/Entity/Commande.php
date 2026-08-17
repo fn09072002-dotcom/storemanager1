@@ -2,27 +2,27 @@
 
 class Commande {
     private int $id;
-    private int $clientId;
-    private int $utilisateurId;
+    private Client $client;
+    private Utilisateur $utilisateur;
     private string $dateCommande;
     private string $statut;
     private float $montantTotal;
 
-    public function __construct(int $id, int $clientId, int $utilisateurId, string $dateCommande, string $statut, float $montantTotal) {
+    public function __construct(int $id, Client $client, Utilisateur $utilisateur, string $dateCommande, string $statut, float $montantTotal) {
         $this->id = $id;
-        $this->clientId = $clientId;
-        $this->utilisateurId = $utilisateurId;
+        $this->client = $client;
+        $this->utilisateur = $utilisateur;
         $this->dateCommande = $dateCommande;
         $this->statut = $statut;
         $this->montantTotal = $montantTotal;
     }
     public function estValidee(): bool {
-    return $this->statut === 'VALIDEE';
+        return $this->statut === 'VALIDEE';
     }
 
     public function getId(): int { return $this->id; }
-    public function getClientId(): int { return $this->clientId; }
-    public function getUtilisateurId(): int { return $this->utilisateurId; }
+    public function getClient(): Client { return $this->client; }
+    public function getUtilisateur(): Utilisateur { return $this->utilisateur; }
     public function getDateCommande(): string { return $this->dateCommande; }
     public function getStatut(): string { return $this->statut; }
     public function getMontantTotal(): float { return $this->montantTotal; }

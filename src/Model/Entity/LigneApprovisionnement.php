@@ -1,14 +1,14 @@
 <?php
 class LigneApprovisionnement {
     private ?int $id;
-    private int $approvisionnementId;
-    private int $produitId;
+    private Approvisionnement $approvisionnement;
+    private Produit $produit;
     private int $quantiteRecue;
     private float $prixAchatUnitaire;
 
     public function __construct(
-        int $approvisionnementId,
-        int $produitId,
+        Approvisionnement $approvisionnement,
+        Produit $produit,
         int $quantiteRecue,
         float $prixAchatUnitaire,
         ?int $id = null
@@ -20,16 +20,16 @@ class LigneApprovisionnement {
             throw new InvalidArgumentException("Le prix d'achat ne peut pas être négatif.");
         }
 
-        $this->approvisionnementId = $approvisionnementId;
-        $this->produitId = $produitId;
+        $this->approvisionnement = $approvisionnement;
+        $this->produit = $produit;
         $this->quantiteRecue = $quantiteRecue;
         $this->prixAchatUnitaire = $prixAchatUnitaire;
         $this->id = $id;
     }
 
     public function getId(): ?int { return $this->id; }
-    public function getApprovisionnementId(): int { return $this->approvisionnementId; }
-    public function getProduitId(): int { return $this->produitId; }
+    public function getApprovisionnement(): Approvisionnement { return $this->approvisionnement; }
+    public function getProduit(): Produit { return $this->produit; }
     public function getQuantiteRecue(): int { return $this->quantiteRecue; }
     public function getPrixAchatUnitaire(): float { return $this->prixAchatUnitaire; }
 

@@ -29,6 +29,18 @@ class PaiementRepository {
         return $paiements;
     }
 
+    public function findByDetteId(int $detteId): array {
+        $stmt = $this->pdo->prepare("SELECT * FROM paiements WHERE dette_id = :dette_id ORDER BY date_paiement DESC");
+        $stmt->execute([':dette_id' => $detteId]);
+        $paiements = [];
+
+        foreach ($stmt->fetchAll() as $row) {
+            $paiements[] = new Paiement($row['id'], $row['commande_id'], $row['dette_id'], $row['montant'], $row['date_paiement'], $row['mode_paiement']);
+        }
+
+        return $paiements;
+    }
+
     public function save(Paiement $paiement): void {
         $sql = "INSERT INTO paiements (commande_id, dette_id, montant, date_paiement, mode_paiement)
                 VALUES (:commande_id, :dette_id, :montant, :date_paiement, :mode_paiement)";

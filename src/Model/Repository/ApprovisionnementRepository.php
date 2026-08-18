@@ -1,20 +1,32 @@
 <?php
 require_once dirname(__DIR__) . '/Entity/Approvisionnement.php';
 require_once dirname(__DIR__) . '/Entity/LigneApprovisionnement.php';
+require_once dirname(__DIR__) . '/Repository/FournisseurRepository.php';
+require_once dirname(__DIR__) . '/Repository/UtilisateurRepository.php';
+require_once dirname(__DIR__) . '/Repository/ProduitRepository.php';
 require_once dirname(__DIR__, 2) . '/Core/Database.php';
 
 class ApprovisionnementRepository {
     private PDO $pdo;
+    private FournisseurRepository $fournisseurRepository;
+    private UtilisateurRepository $utilisateurRepository;
+    private ProduitRepository $produitRepository;
 
     public function __construct() {
         $this->pdo = Database::getInstance();
+        $this->fournisseurRepository = new FournisseurRepository();
+        $this->utilisateurRepository = new UtilisateurRepository();
+        $this->produitRepository = new ProduitRepository();
     }
 
     private function mapRow(array $row): Approvisionnement {
+        $fournisseur = $this->fournisseurRepository->findById((int) $row['fournisseur_id']);
+        $utilisateur = $this->utilisateurRepository->findById((int) $row['utilisateur_id']);
+
         return new Approvisionnement(
-            $row['id'],
-            $row['fournisseur_id'],
-            $row['utilisateur_id'],
+            (int) $row['id'],
+            $fournisseur,
+            $utilisateur,
             $row['numero_bl'],
             $row['statut'],
             $row['date_reception']
@@ -49,14 +61,14 @@ class ApprovisionnementRepository {
         return $liste;
     }
 
-    public function save(int $fournisseurId, int $utilisateurId, string $numeroBL): int {
+    public function save(Fournisseur $fournisseur, Utilisateur $utilisateur, string $numeroBL): int {
         $sql = "INSERT INTO approvisionnements (fournisseur_id, utilisateur_id, numero_bl, statut)
                 VALUES (:fournisseur_id, :utilisateur_id, :numero_bl, 'COMMANDE')
                 RETURNING id";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
-            ':fournisseur_id' => $fournisseurId,
-            ':utilisateur_id' => $utilisateurId,
+            ':fournisseur_id' => $fournisseur->getId(),
+            ':utilisateur_id' => $utilisateur->getId(),
             ':numero_bl' => $numeroBL,
         ]);
 
@@ -79,25 +91,26 @@ class ApprovisionnementRepository {
                 VALUES (:approvisionnement_id, :produit_id, :quantite_recue, :prix_achat_unitaire)";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
-            ':approvisionnement_id' => $ligne->getApprovisionnementId(),
-            ':produit_id' => $ligne->getProduitId(),
+            ':approvisionnement_id' => $ligne->getApprovisionnement()->getId(),
+            ':produit_id' => $ligne->getProduit()->getId(),
             ':quantite_recue' => $ligne->getQuantiteRecue(),
             ':prix_achat_unitaire' => $ligne->getPrixAchatUnitaire(),
         ]);
     }
 
-    public function findLignesByApprovisionnementId(int $approvisionnementId): array {
+    public function findLignesByApprovisionnement(Approvisionnement $approvisionnement): array {
         $stmt = $this->pdo->prepare("SELECT * FROM lignes_approvisionnement WHERE approvisionnement_id = :id");
-        $stmt->execute([':id' => $approvisionnementId]);
+        $stmt->execute([':id' => $approvisionnement->getId()]);
         $lignes = [];
         foreach ($stmt->fetchAll() as $row) {
+            $produit = $this->produitRepository->findById((int) $row['produit_id']);
+
             $lignes[] = new LigneApprovisionnement(
-                $row['id'],
-                $row['approvisionnement_id'],
-                $row['produit_id'],
-                $row['quantite_recue'],
-                $row['prix_achat_unitaire']
-                
+                $approvisionnement,
+                $produit,
+                (int) $row['quantite_recue'],
+                (float) $row['prix_achat_unitaire'],
+                (int) $row['id']
             );
         }
         return $lignes;

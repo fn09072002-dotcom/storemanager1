@@ -1,25 +1,53 @@
+
+
 <?php
 require_once __DIR__ . '/../Model/Repository/ApprovisionnementRepository.php';
+require_once __DIR__ . '/../Model/Repository/FournisseurRepository.php';
+require_once __DIR__ . '/../Model/Repository/UtilisateurRepository.php';
+require_once __DIR__ . '/../Model/Repository/ProduitRepository.php';
 require_once __DIR__ . '/../Model/Entity/LigneApprovisionnement.php';
 require_once __DIR__ . '/../Core/Database.php';
 
 class SupplyService {
-    private PDO $pdo;
-    private ApprovisionnementRepository $approRepo;
 
-    public function __construct() {
-        $this->pdo = Database::getInstance();
-        $this->approRepo = new ApprovisionnementRepository();
+    private static ?ApprovisionnementRepository $approRepo = null;
+    private static ?FournisseurRepository $fournisseurRepo = null;
+    private static ?UtilisateurRepository $utilisateurRepo = null;
+    private static ?ProduitRepository $produitRepo = null;
+    private static ?PDO $pdo = null;
+
+    private function __construct() {}
+
+    private static function initDependances(): void {
+        if (self::$approRepo === null) {
+            self::$approRepo = new ApprovisionnementRepository();
+            self::$fournisseurRepo = new FournisseurRepository();
+            self::$utilisateurRepo = new UtilisateurRepository();
+            self::$produitRepo = new ProduitRepository();
+            self::$pdo = Database::getInstance();
+        }
     }
 
-  
-    public function creerBonLivraison(int $fournisseurId, int $utilisateurId, string $numeroBL): int {
-        return $this->approRepo->save($fournisseurId, $utilisateurId, $numeroBL);
+    public static function creerBonLivraison(int $fournisseurId, int $utilisateurId, string $numeroBL): int {
+        self::initDependances();
+
+        $fournisseur = self::$fournisseurRepo->findById($fournisseurId);
+        $utilisateur = self::$utilisateurRepo->findById($utilisateurId);
+
+        if ($fournisseur === null) {
+            throw new Exception("Fournisseur introuvable (id={$fournisseurId}).");
+        }
+        if ($utilisateur === null) {
+            throw new Exception("Utilisateur introuvable (id={$utilisateurId}).");
+        }
+
+        return self::$approRepo->save($fournisseur, $utilisateur, $numeroBL);
     }
 
- 
-    public function receptionner(int $approvisionnementId, array $produits): void {
-        $appro = $this->approRepo->findById($approvisionnementId);
+    public static function receptionner(int $approvisionnementId, array $produits): void {
+        self::initDependances();
+
+        $appro = self::$approRepo->findById($approvisionnementId);
 
         if ($appro === null) {
             throw new Exception("Bon de livraison introuvable (id={$approvisionnementId}).");
@@ -33,42 +61,49 @@ class SupplyService {
             throw new Exception("Impossible de réceptionner un BL sans aucune ligne de produit.");
         }
 
-        $this->pdo->beginTransaction();
+        self::$pdo->beginTransaction();
 
         try {
             foreach ($produits as $item) {
-             $ligne = new LigneApprovisionnement(
-                    0,                                      
-                    $approvisionnementId,
-                    (int) $item['produit_id'],
+                $produit = self::$produitRepo->findById((int) $item['produit_id']);
+
+                if ($produit === null) {
+                    throw new Exception("Produit introuvable (id={$item['produit_id']}).");
+                }
+
+                $ligne = new LigneApprovisionnement(
+                    $appro,
+                    $produit,
                     (int) $item['quantite'],
                     (float) $item['prix_achat_unitaire']
                 );
-                $this->approRepo->saveLigne($ligne);
+                self::$approRepo->saveLigne($ligne);
 
-                $stmt = $this->pdo->prepare(
+                $stmt = self::$pdo->prepare(
                     "UPDATE produits SET quantite_stock = quantite_stock + :quantite WHERE id = :produit_id"
                 );
                 $stmt->execute([
                     ':quantite' => $ligne->getQuantiteRecue(),
-                    ':produit_id' => $ligne->getProduitId(),
+                    ':produit_id' => $produit->getId(),
                 ]);
             }
 
-            $this->approRepo->marquerReceptionne($approvisionnementId, date('Y-m-d H:i:s'));
+            self::$approRepo->marquerReceptionne($approvisionnementId, date('Y-m-d H:i:s'));
 
-            $this->pdo->commit();
+            self::$pdo->commit();
         } catch (Exception $e) {
-            $this->pdo->rollBack();
+            self::$pdo->rollBack();
             throw $e;
         }
     }
 
-    public function getBonsEnCours(): array {
-        return $this->approRepo->findByStatut('COMMANDE');
+    public static function getBonsEnCours(): array {
+        self::initDependances();
+        return self::$approRepo->findByStatut('COMMANDE');
     }
 
-    public function getBonsReceptionnes(): array {
-        return $this->approRepo->findByStatut('RECEPTIONNE');
+    public static function getBonsReceptionnes(): array {
+        self::initDependances();
+        return self::$approRepo->findByStatut('RECEPTIONNE');
     }
 }
